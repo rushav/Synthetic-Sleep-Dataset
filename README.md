@@ -207,25 +207,26 @@ gen.save(df)         # write CSV + metadata JSON to data/output/
 
 ## 8. Validation Results
 
-Results from `05_validation.ipynb` — **overall quality score: 71.4% (5/7 checks passed)**.
+Results from `05_validation.ipynb` — **overall quality score: 50% (5/10 checks passed)**.
 
 | Tier | Test | Target | Result |
 |------|------|--------|--------|
-| 1 | KS-test: temperature distribution | p > 0.05 | FAIL (p≈0) — synthetic bedroom temps differ from office IoT sensor |
-| 1 | KS-test: light distribution | p > 0.05 | FAIL (p≈0) — as expected: office building vs. bedroom |
-| 1 | KS-test: sleep efficiency | p > 0.05 | FAIL (p≈0) — synthetic range tighter than real dataset |
-| 2 | Synthetic model RMSE ≤ 1.2× real baseline | PASS | **PASS** (0.061 vs. 0.075 threshold) |
+| 1 | KS-test: temperature distribution | p > 0.05 | **FAIL** (p≈0) — synthetic bedroom temps differ from office IoT sensor |
+| 1 | KS-test: light distribution | p > 0.05 | **FAIL** (p≈0) — expected domain mismatch: office building vs. bedroom |
+| 1 | KS-test: sleep efficiency | p > 0.05 | **FAIL** (p≈0) — synthetic range tighter than real dataset |
+| 2 | Synthetic model in-sample RMSE ≤ 1.2× real baseline | PASS | **PASS** (0.061 vs. 0.075 threshold) |
 | 3 | High temp optimality → efficiency ≥ 0.78 | PASS | **PASS** (actual=0.823) |
-| 3 | Many light events (>4) → efficiency ≤ 0.72 | PASS | FAIL (actual=0.833) |
-| 3 | Deep sleep ↔ awakenings correlation < −0.2 | PASS | FAIL (actual=−0.002) |
+| 3 | Many light events (>4) → efficiency ≤ 0.72 | PASS | **FAIL** (actual=0.833) |
+| 3 | Deep sleep ↔ awakenings correlation < −0.2 | PASS | **FAIL** (actual=−0.002) |
 | 3 | Seniors more awakenings than young adults | PASS | **PASS** (Δ=0.25) |
 | 3 | Sleep stage percentages sum to 100% | PASS | **PASS** (error=0.00) |
 | 3 | Summer temp mean > winter temp mean | PASS | **PASS** (Δ=4.5 °C) |
 
 **Notes on failures:**
-- Tier 1 KS-failures are expected: the real IoT sensor (office building) has a fundamentally different environment from a synthetic bedroom; KS-tests are extremely sensitive at n=5,000.
-- Tier 3 light-event failure: the ML label mapping mutes the light→efficiency penalty at high event counts.
-- Tier 3 deep-sleep correlation failure: the two labels are predicted by independent Random Forests; inter-label correlations are not explicitly enforced.
+- **Tier 1 KS-failures are expected and informative:** The Room Occupancy dataset we use for calibration records an office building environment (daytime occupancy, fluorescent lighting, office HVAC). Our generator targets a bedroom environment (sleep-time temperatures 17–25 °C, near-zero ambient light). The KS-test is highly sensitive at n=5,000 and detects even small distributional shifts; we expected these to fail given the domain mismatch and discuss it as a design limitation.
+- **Tier 2 caveat:** Our Tier 2 evaluation trains and evaluates on synthetic data (in-sample), giving an optimistic lower bound on RMSE. True cross-domain validation is not possible because the real Sleep Efficiency dataset lacks co-located environmental sensors.
+- **Tier 3 light-event failure:** The Random Forest label-assignment function attenuates the light→efficiency penalty at high event counts due to the nonlinear feature mapping, muting the expected correlation.
+- **Tier 3 deep-sleep correlation failure:** Sleep stage percentages (REM, deep, light) are predicted by independent Random Forest models with no inter-label dependency constraint, so the biological correlation between deep sleep and awakenings is not explicitly enforced.
 
 ---
 

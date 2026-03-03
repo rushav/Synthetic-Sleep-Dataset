@@ -351,9 +351,15 @@ class Validator:
             lr_syn = LinearRegression()
             lr_syn.fit(X_syn_simple, y_syn_vals)
 
-            # Evaluate on real data: predict real efficiency from real numeric features
-            # (This is a simplified cross-domain evaluation)
-            # We report inter-domain transfer RMSE as a proxy
+            # NOTE ON METHODOLOGY: We evaluate the linear model on the same synthetic
+            # data it was trained on (in-sample evaluation).  A true cross-domain
+            # validation would require predicting sleep efficiency on the real dataset
+            # using purely environmental features — however, the real Sleep Efficiency
+            # dataset does not include co-located sensor time-series, making direct
+            # feature-space alignment impossible.  We therefore report in-sample
+            # synthetic RMSE as a lower bound and compare it to the real-data baseline
+            # as a proxy for predictive plausibility.  We acknowledge this is an
+            # optimistic estimate and discuss it as a limitation in our paper.
             y_syn_pred_on_syn = lr_syn.predict(X_syn_simple)
             rmse_syn_on_syn = float(np.sqrt(mean_squared_error(y_syn_vals, y_syn_pred_on_syn)))
             r2_syn_on_syn   = float(r2_score(y_syn_vals, y_syn_pred_on_syn))

@@ -590,7 +590,11 @@ class SignalGenerator:
                 S_events[start_idx:idx_end], decay
             )
 
-        # dB levels: take the louder of background or event at each sample
+        # We add event energy on top of the background level.
+        # np.maximum ensures we never return less than the background baseline
+        # (S_events is always ≥ 0, so this is equivalent to S_background + S_events,
+        # but is written this way to make the additive intent explicit and guard
+        # against any edge-case floating-point underflow in S_events).
         sound = np.maximum(S_background, S_background + S_events)
 
         # Physical bounds: 0–120 dB

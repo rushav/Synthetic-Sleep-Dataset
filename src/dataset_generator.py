@@ -229,9 +229,15 @@ class SleepDatasetGenerator:
         # ---- 4. Assemble flat session record ----
         record = {
             # Metadata
-            "session_id":   str(uuid.UUID(int=session_seed & 0xFFFFFFFFFFFFFFFF
-                                          | (session_idx << 64)
-                                          & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)),
+            # We construct a deterministic 128-bit UUID by combining the low 64 bits
+            # of session_seed (for uniqueness) with the high 64 bits of session_idx
+            # (for ordering).  Operator precedence: & binds tighter than |, so:
+            #   low_part  = session_seed & 0xFFFF...FFFF  (64-bit mask)
+            #   high_part = (session_idx << 64) & 0xFFFF...FFFF  (128-bit mask)
+            #   uuid_int  = low_part | high_part
+            "session_id":   str(uuid.UUID(int=(session_seed & 0xFFFFFFFFFFFFFFFF)
+                                          | ((session_idx << 64)
+                                          & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))),
             "session_index": session_idx,
             "season":       season,
             "age_group":    age_group,
